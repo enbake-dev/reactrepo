@@ -42,13 +42,14 @@ class Dashboard extends Component {
         isAdmin:true,
         
     }
-    this.editQuota={}
 }
 
 componentDidMount(){
     this.getData()
+    console.log(this.ref)
 }
   getData(){
+    console.log(`${config.apiUrl}api/v1/users/business_get_quota/`)
     axios.get(`${config.apiUrl}api/v1/users/business_get_quota/`,{headers:   authHeader() })
     .then((response) => {
         this.state.rows = []
@@ -68,6 +69,7 @@ normaliseTableData(){
     let rows =[]
     let tableRowData = {}
     this.userEditDataCol= []
+    let editQuota={}
     let columns= [
         {
           label: 'User Name',
@@ -108,6 +110,7 @@ normaliseTableData(){
       ]
     Object.values(this.state.data.data).map(user=>{
       console.log(user)
+      editQuota[user.id] = user.monthly_quota
         tableRowData = {
             userName: user.username,
             type: user.is_organization_admin?'Admin': 'User',
@@ -150,6 +153,7 @@ normaliseTableData(){
     this.setState({
         columns,
         loader:false,
+        editQuota
     })
 }
 onQuotaChange(e,userId){
@@ -161,8 +165,8 @@ onQuotaChange(e,userId){
     inputEl.value = 5;
     // this.forceUpdate()
 }
-onEditQuota(userId,isAdmin=false){
-  
+onEditQuota(userId,monthly_quota,isAdmin=false){
+
     if(isAdmin){
         let editQuota = document.getElementById(`admin-edit-${userId}`)
         let showQuota = document.getElementById(`admin-quota-${userId}`)
@@ -182,8 +186,8 @@ onEditQuota(userId,isAdmin=false){
 }
 onCancelQuota(userId,isAdmin=false){
     if(isAdmin){
-        let editQuota = document.getElementById(`edit-${userId}`)
-        let showQuota = document.getElementById(`quota-${userId}`)
+        let editQuota = document.getElementById(`admin-edit-${userId}`)
+        let showQuota = document.getElementById(`admin-quota-${userId}`)
         editQuota.classList.remove("d-block")
         showQuota.classList.remove("d-none")
         showQuota.classList.add("d-block")
@@ -199,11 +203,11 @@ onCancelQuota(userId,isAdmin=false){
     }
     
 }
-onSaveQuota(userId,userName){
+onSaveQuota(userId,userName,type){
     this.setState({loader:true})
-    let newQuota =document.getElementById(`input-${userId}`).value;
+    let newQuota =document.getElementById(`${type}-${userId}`).value;
     console.log(newQuota)
-    axios.patch(`${config.apiUrl}api/v1/users/${userId}/`,{
+    axios.patch(`${config.apiUrl}api/v1/${type}/${userId}/`,{
         username: userName,
         monthly_quota: parseInt(newQuota)
     },{headers:  authHeader() })
@@ -234,6 +238,14 @@ onEditAdminQuota(userId){
 
 }
 
+onChange = (e,id) => {
+  const { editQuota } = this.state
+  editQuota[id] = e.target.value
+  this.setState({
+    editQuota
+  })
+}
+
   render() {
       const {columns, rows, loader, isAdmin, data, users} =this.state
     return (
@@ -255,8 +267,8 @@ onEditAdminQuota(userId){
                                         >
                                         <ModalBody className="p-0 rounded text-center">
                                             <MDBAlert color="success" className="mb-0 rounded">
-                                                <p>Quota Updated Successfully</p>
-                                            </MDBAlert>
+-                                                <p>Quota Updated Successfully</p>
+-                                           </MDBAlert>
                                         </ModalBody>
                                     </Modal>
                                     <div className="mb-3">
@@ -278,15 +290,14 @@ onEditAdminQuota(userId){
                                                     <td>{data.organisation[0].name}</td>
                                                     <td>
                                                     <div>
-                                                        <Row id={`admin-${data.organisation[0].id}`} className="d-none">
+                                                        <Row id={`admin-edit-${data.organisation[0].id}`} className="d-none">
                                                             <Col md="8">
-
-                                                                <input type="number" defaultValue={data.organisation[0].monthly_quota} className="form-control"/>
+                                                                <input type="text" id={`organizations-${data.organisation[0].id}`} defaultValue={data.organisation[0].monthly_quota} className="form-control"/>
                                                             </Col>
                                                             <Col md="4">
                                                                 <Row>
                                                                     <Col md="6">
-                                                                    <button onClick={()=>this.onSaveQuota(data.organisation[0].id,data.organisation[0].username)} className="text-success">
+                                                                    <button onClick={()=>this.onSaveQuota(data.organisation[0].id,data.organisation[0].username,"organizations")} className="text-success">
                                                                         <i className="fa fa-check" aria-hidden="true"></i>
                                                                     </button>    
                                                                     </Col>
@@ -301,7 +312,7 @@ onEditAdminQuota(userId){
                                                         <div id={`admin-quota-${data.organisation[0].id}`}>
                                                             <span>{data.organisation[0].monthly_quota}</span>
                                                             <span className="float-right">
-                                                                <button onClick={()=>this.onEditQuota(data.organisation[0].id,true)} className="text-primary">
+                                                                <button onClick={()=>this.onEditQuota(data.organisation[0].id,data.organisation[0].monthly_quota,true)} className="text-primary">
                                                                     <i className="fa fa-pencil" aria-hidden="true"></i>
                                                                 </button>
                                                             </span>
@@ -343,12 +354,12 @@ onEditAdminQuota(userId){
                                               <div>
                                                 <Row id={`edit-${u.id}`} className="d-none">
                                                     <Col md="8">
-                                                        <input type="text" id={`input-${u.id}`} defaultValue={u.monthly_quota} className="form-control"/>
+                                                        <input type="text" id={`users-${u.id}`} value={this.state.editQuota[u.id]} onChange={(e)=> { this.onChange(e,u.id)}} className="form-control"/>
                                                     </Col>
                                                     <Col md="4">
                                                         <Row>
                                                             <Col md="6">
-                                                            <button onClick={()=>this.onSaveQuota(u.id,u.username)} className="text-success">
+                                                            <button onClick={()=>this.onSaveQuota(u.id,u.username,"users")} className="text-success">
                                                                 <i className="fa fa-check" aria-hidden="true"></i>
                                                             </button>    
                                                             </Col>
@@ -358,12 +369,11 @@ onEditAdminQuota(userId){
                                                             </button>   
                                                             </Col>
                                                         </Row>
-                                                    </Col>                            
+                                                    </Col>
                                                 </Row>
-                                                <div id={`quota-${u.id}`}>
-                                                    <span>{u.monthly_quota}</span>
-                                                    <span className="float-right">
-                                                        <button onClick={()=>this.onEditQuota(u.id)} className="text-primary">
+                                                <div id={`quota-${u.id}`}>     
+                                                    <span className="float-right">{u.monthly_quota}
+                                                        <button onClick={()=>this.onEditQuota(u.id,u.monthly_quota)} className="text-primary">
                                                             <i className="fa fa-pencil" aria-hidden="true"></i>
                                                         </button>
                                                     </span>
@@ -418,23 +428,6 @@ onEditAdminQuota(userId){
             }
             </Col>
         </Row>
-        <div id="myModal" className="modal fade" role="dialog">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal">&times;</button>
-              <h4 className="modal-title">Monthly Quota</h4>
-            </div>
-            <div className="modal-body">
-              <input type="text"/>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-default" data-dismiss="modal">Close</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <button type="button" className="btn btn-info btn-lg" data-toggle="modal" data-target="#myModal">Open Modal</button>
      </Container>
     )
   }
