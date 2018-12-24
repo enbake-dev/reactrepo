@@ -50,7 +50,7 @@ componentDidMount(){
 }
   getData(){
     console.log(`${config.apiUrl}api/v1/users/business_get_quota/`)
-    axios.get(`${config.apiUrl}api/v1/users/business_get_quota/`,{headers:   authHeader() })
+    axios.get(`${config.apiUrl}/api/v1/users/business_get_quota/`,{headers:   authHeader() })
     .then((response) => {
         this.state.rows = []
         this.setState({
@@ -207,7 +207,7 @@ onSaveQuota(userId,userName,type){
     this.setState({loader:true})
     let newQuota =document.getElementById(`${type}-${userId}`).value;
     console.log(newQuota)
-    axios.patch(`${config.apiUrl}api/v1/${type}/${userId}/`,{
+    axios.patch(`${config.apiUrl}/api/v1/${type}/${userId}/`,{
         username: userName,
         monthly_quota: parseInt(newQuota)
     },{headers:  authHeader() })
@@ -382,7 +382,7 @@ onChange = (e,id) => {
                                             </td>
                                             <td>{u.quota_usage_count == null ? 0: u.quota_usage_count}</td>
                                             <td>{u.monthly_quota - u.quota_usage_count}</td>
-                                            <td>{u.quota_reset_date == null? 'not-define': u.quota_reset_date}</td>
+                                            <td>{u.quota_reset_date == null? 'not-defined': u.quota_reset_date}</td>
                                           </tr>)
                                         })}
                                         </tbody>
